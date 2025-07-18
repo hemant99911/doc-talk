@@ -18,10 +18,10 @@ graph TD
     end
 
     subgraph RAG Pipeline
-        D[1. Load Document]
-        E[2. Chunk Text]
-        F[3. Create Embeddings & FAISS Store]
-        G[4. Retrieve Docs & Generate Answer]
+        D[Load Document]
+        E[Chunk Text]
+        F[Create Embeddings & FAISS Store]
+        G[Retrieve Docs & Generate Answer]
     end
 
     subgraph External Services
