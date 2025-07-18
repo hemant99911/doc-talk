@@ -1,10 +1,10 @@
 import os
 from fastapi import FastAPI, File, UploadFile
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.question_answering import load_qa_chain
-from langchain.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
+from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -16,6 +16,10 @@ if not api_key:
     raise ValueError("GOOGLE_API_KEY not found in environment variables.")
 
 app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to DocTalk API"}
 
 # Global variable to store the vector store
 vector_store = None
