@@ -95,6 +95,7 @@ async def ask_question(query: Query):
         "generation_chain": generation_chain,
         "retrieval_grader": retrieval_grader,
         "question_rewriter": question_rewriter,
+        "iterations": 0,
     }
     
     response = app_graph.invoke(inputs)

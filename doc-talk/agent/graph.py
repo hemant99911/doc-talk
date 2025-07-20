@@ -11,6 +11,7 @@ class GraphState(TypedDict):
         question: question
         generation: LLM generation
         documents: list of documents
+        iterations: number of iterations
         retriever: the retriever object
         generation_chain: the generation chain
         retrieval_grader: the retrieval grader chain
@@ -19,6 +20,7 @@ class GraphState(TypedDict):
     question: str
     generation: str
     documents: List[Document]
+    iterations: int
     retriever: object
     generation_chain: object
     retrieval_grader: object
@@ -97,16 +99,17 @@ def decide_to_generate(state):
         str: Binary decision for next node to call
     """
     print("---ASSESS GRADED DOCUMENTS---")
-    question = state["question"]
     filtered_documents = state["documents"]
+    iterations = state["iterations"]
 
-    if not filtered_documents:
-        # All documents have been filtered check_relevance
+    if not filtered_documents and iterations < 3:
+        # All documents have been filtered and we have not reached the max iterations
         # We will re-generate a new query
         print("---DECISION: ALL DOCUMENTS ARE NOT RELEVANT, TRANSFORM QUERY---")
         return "transform_query"
     else:
-        # We have relevant documents, so generate answer
+        # We have relevant documents, or we have reached the max iterations
+        # so generate answer
         print("---DECISION: GENERATE---")
         return "generate"
 
@@ -123,9 +126,10 @@ def transform_query(state):
     print("---TRANSFORM QUERY---")
     question = state["question"]
     question_rewriter = state["question_rewriter"]
+    iterations = state["iterations"]
     
     better_question = question_rewriter.invoke({"question": question})
-    return {"question": better_question.content}
+    return {"question": better_question.content, "iterations": iterations + 1}
 
 def build_graph():
     workflow = StateGraph(GraphState)
