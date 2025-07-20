@@ -5,12 +5,11 @@ from fastapi.responses import FileResponse
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from agent.graph import build_graph
+from agent.chains import get_document_grader, get_question_rewriter, get_retrieval_grader, get_generation_chain
 
 load_dotenv()
 
@@ -28,11 +27,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def read_index():
     return FileResponse('static/index.html')
 
-# Global variable to store the vector store
+# Global variables
 vector_store = None
+app_graph = None
 
 class Query(BaseModel):
     question: str
+
+@app.on_event("startup")
+async def startup_event():
+    global app_graph
+    app_graph = build_graph()
 
 @app.post("/uploadfile/")
 async def create_upload_file(file: UploadFile = File(...)):
@@ -70,27 +75,28 @@ async def create_upload_file(file: UploadFile = File(...)):
 
 @app.post("/ask/")
 async def ask_question(query: Query):
-    global vector_store
+    global vector_store, app_graph
     if vector_store is None:
         return {"error": "Please upload a document first."}
-        
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key, temperature=0.3)
-    
-    prompt = ChatPromptTemplate.from_template("""
-    Answer the following question based only on the provided context.
-    Think step by step before providing a detailed answer.
-    <context>
-    {context}
-    </context>
-    Question: {input}
-    """)
-    
-    document_chain = create_stuff_documents_chain(llm, prompt)
-    
+    if app_graph is None:
+        return {"error": "Graph not initialized."}
+
     retriever = vector_store.as_retriever()
     
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    # Get the chains
+    generation_chain = get_generation_chain(api_key)
+    retrieval_grader = get_retrieval_grader(api_key)
+    question_rewriter = get_question_rewriter(api_key)
+
+    # Run the graph
+    inputs = {
+        "question": query.question,
+        "retriever": retriever,
+        "generation_chain": generation_chain,
+        "retrieval_grader": retrieval_grader,
+        "question_rewriter": question_rewriter,
+    }
     
-    response = retrieval_chain.invoke({"input": query.question})
+    response = app_graph.invoke(inputs)
     
-    return {"answer": response["answer"]}
+    return {"answer": response["generation"]}

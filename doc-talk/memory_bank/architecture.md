@@ -2,7 +2,7 @@
 
 This document contains the architecture diagrams for the Doc-Talk application.
 
-## Current Architecture
+## Current Architecture (Simple RAG Chain)
 
 This diagram represents the initial design of the RAG pipeline and the FastAPI server.
 
@@ -43,3 +43,16 @@ graph TD
     C -- Sends answer to --> A
 
 ```
+
+## Phase 2 Architecture (LangGraph Agent)
+
+This diagram illustrates the cyclical, self-correcting agent architecture using LangGraph.
+
+```mermaid
+graph TD
+    A[Start] --> B(Retrieve Documents);
+    B --> C{Grade Documents};
+    C --o Relevant --> D(Generate Answer);
+    C --x Not Relevant --> E(Rewrite Question);
+    E --> B;
+    D --> F[End];

@@ -1,6 +1,7 @@
 langchain
 langchain-google-genai
 langchain-community
+langgraph
 fastapi
 uvicorn
 python-dotenv
