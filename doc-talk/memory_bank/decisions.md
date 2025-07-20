@@ -21,3 +21,8 @@ This document logs the key decisions made during the development of the Doc-Talk
 
 - **Decision:** Refactor the question-answering chain from the deprecated `load_qa_chain` to the modern LangChain Expression Language (LCEL) using `create_retrieval_chain`.
 - **Reasoning:** The application was consistently failing with a `404 Not Found` error when calling the Google AI API. The traceback included deprecation warnings for `load_qa_chain` and `.run()`. Refactoring to the modern LCEL standard is the correct, future-proof way to build chains and it resolved the underlying API call issue.
+
+## ADR-005: Choice of Web Search Tool
+
+- **Decision:** Use the Tavily Search API as the web search tool for the agent.
+- **Reasoning:** Tavily is a search engine designed specifically for LLM agents. It returns clean, summarized results that are optimized for RAG, which saves us the complexity of building a separate web scraping and data cleaning layer. It has a generous free tier and is well-integrated with LangChain.
