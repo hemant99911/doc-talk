@@ -26,6 +26,6 @@ The core logic of the application, orchestrated by LangChain.
 - **Vector Store:**
     - **Purpose:** To store the text chunk embeddings in a way that allows for efficient searching of similar vectors.
     - **Implementation:** `FAISS` (Facebook AI Similarity Search), an in-memory vector database.
-- **QA Chain:**
-    - **Purpose:** To orchestrate the retrieval and generation process.
-    - **Implementation:** `load_qa_chain` with the `stuff` chain type, which "stuffs" all retrieved documents into the context for the language model.
+- **Retrieval Chain (LCEL):**
+    - **Purpose:** To orchestrate the retrieval and generation process using the modern LangChain Expression Language (LCEL).
+    - **Implementation:** We use `create_retrieval_chain`, which combines a `retriever` (our FAISS vector store) with a document processing chain (`create_stuff_documents_chain`). This provides a more flexible and powerful way to handle RAG pipelines compared to the deprecated `load_qa_chain`.

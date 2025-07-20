@@ -1,9 +1,13 @@
 import os
 from fastapi import FastAPI, File, UploadFile
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -17,9 +21,12 @@ if not api_key:
 
 app = FastAPI()
 
+# Mount the static directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/")
-def read_root():
-    return {"message": "Welcome to DocTalk API"}
+async def read_index():
+    return FileResponse('static/index.html')
 
 # Global variable to store the vector store
 vector_store = None
@@ -67,12 +74,23 @@ async def ask_question(query: Query):
     if vector_store is None:
         return {"error": "Please upload a document first."}
         
-    # Perform similarity search
-    docs = vector_store.similarity_search(query.question)
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key, temperature=0.3)
     
-    # Get the answer from the LLM
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=api_key, temperature=0.3)
-    chain = load_qa_chain(llm, chain_type="stuff")
-    response = chain.run(input_documents=docs, question=query.question)
+    prompt = ChatPromptTemplate.from_template("""
+    Answer the following question based only on the provided context.
+    Think step by step before providing a detailed answer.
+    <context>
+    {context}
+    </context>
+    Question: {input}
+    """)
     
-    return {"answer": response}
+    document_chain = create_stuff_documents_chain(llm, prompt)
+    
+    retriever = vector_store.as_retriever()
+    
+    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    
+    response = retrieval_chain.invoke({"input": query.question})
+    
+    return {"answer": response["answer"]}
