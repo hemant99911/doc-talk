@@ -10,11 +10,30 @@ I was drowning in project documentation, meeting notes, and scattered articles. 
 
 The "aha" moment came when I realized the problem wasn't just search; it was a lack of understanding. I didn't just want to find documents; I wanted to get answers. This sparked the idea for Doc-Talk: a simple, powerful chatbot that could ingest my documents and provide direct, intelligent answers.
 
-### The Architecture That Changed Everything
+### Phase 1: The Simple (But Flawed) RAG Pipeline
 
-The initial version of Doc-Talk was a standard Retrieval-Augmented Generation (RAG) pipeline. It was good, but it was brittle. If the initial document retrieval was poor, the whole system failed.
+Our first version was a classic RAG pipeline built with LangChain. It was a great starting point and worked well for "happy path" cases.
 
-To solve this, I rebuilt the core logic into a cyclical, self-correcting agent using LangGraph. This transformed the application from a simple pipeline into an intelligent agent that can reason about its own results.
+**Phase 1 Architecture (Simple RAG Chain)**
+```mermaid
+graph TD
+    subgraph User
+        A[User Browser]
+    end
+
+    subgraph RAG Pipeline
+        B[Retrieve Docs] --> C(Generate Answer)
+    end
+    
+    A -- Asks question --> B
+    C -- Returns answer --> A
+```
+
+It was simple: a user asks a question, we retrieve the most relevant documents, and an LLM generates an answer based on them. However, it had a critical flaw: if the initial document retrieval was poor or irrelevant, the model would either provide a wrong answer or state that it couldn't help. There was no second chance, no reasoning. This brittleness is what led to the next evolution.
+
+### Phase 2: The Self-Correcting Agent
+
+To solve the flaws of the simple RAG pipeline, I rebuilt the core logic into a cyclical, self-correcting agent using LangGraph. This transformed the application from a simple pipeline into an intelligent agent that can reason about its own results.
 
 **Phase 2 Architecture (LangGraph Agent)**
 ```mermaid
@@ -71,3 +90,14 @@ The most impressive part is not just the speed, but the robustness. The agent's 
 
 📞 **Get Involved:**
 -   **GitHub:** [https://github.com/hemant99911/doc-talk](https://github.com/hemant99911/doc-talk)
+
+---
+
+### How to Share This Story
+
+This project was built in public, and sharing the journey is part of the process. Here’s a quick guide on how to share this post for maximum impact, based on our project's distribution strategy:
+
+-   **Twitter/X:** Create a thread highlighting the key metrics (2.74s response time!), the "Epic Fails" (the API key nightmare is very relatable), and the final LangGraph architecture diagram.
+-   **LinkedIn:** Focus on the professional angle. Frame it as a story about solving a business problem (information overload) with modern AI architecture and the lessons learned about building robust agents.
+-   **Reddit (e.g., r/programming, r/LocalLLaMA):** Post a technical deep-dive. Focus on the code, the decision to use LangGraph over a simple chain, and offer to do an AMA (Ask Me Anything) in the comments.
+-   **Hacker News:** The title is key. Something like "I built a RAG agent that corrects its own mistakes using LangGraph" would be compelling. Focus the story on the technical innovation and the surprising results from the evaluation.
