@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from fastapi import FastAPI, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -20,8 +21,10 @@ if not api_key:
 
 app = FastAPI()
 
+# Build a path to the static directory relative to this file
+static_dir = Path(__file__).parent / "static"
 # Mount the static directory
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
 async def read_index():
@@ -33,6 +36,30 @@ app_graph = None
 
 class Query(BaseModel):
     question: str
+
+def process_document(file_path: str, file_name: str):
+    """
+    Loads a document, splits it into chunks, creates embeddings, and returns a vector store.
+    """
+    # Load the document based on file type
+    if file_name.endswith(".pdf"):
+        loader = PyPDFLoader(file_path)
+    elif file_name.endswith(".docx"):
+        loader = Docx2txtLoader(file_path)
+    else:
+        loader = TextLoader(file_path)
+        
+    documents = loader.load()
+    
+    # Split the documents into chunks
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    docs = text_splitter.split_documents(documents)
+    
+    # Create embeddings
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+    
+    # Create FAISS vector store
+    return FAISS.from_documents(docs, embeddings)
 
 @app.on_event("startup")
 async def startup_event():
@@ -48,25 +75,7 @@ async def create_upload_file(file: UploadFile = File(...)):
     with open(file_location, "wb+") as file_object:
         file_object.write(file.file.read())
         
-    # Load the document based on file type
-    if file.filename.endswith(".pdf"):
-        loader = PyPDFLoader(file_location)
-    elif file.filename.endswith(".docx"):
-        loader = Docx2txtLoader(file_location)
-    else:
-        loader = TextLoader(file_location)
-        
-    documents = loader.load()
-    
-    # Split the documents into chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    docs = text_splitter.split_documents(documents)
-    
-    # Create embeddings
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
-    
-    # Create FAISS vector store
-    vector_store = FAISS.from_documents(docs, embeddings)
+    vector_store = process_document(file_location, file.filename)
     
     # Clean up the temporary file
     os.remove(file_location)
