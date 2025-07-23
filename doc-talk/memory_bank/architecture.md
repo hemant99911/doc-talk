@@ -8,24 +8,30 @@ This diagram represents the initial design of the RAG pipeline and the FastAPI s
 
 ```mermaid
 graph TD
+    %% Define styles
+    classDef user fill:#28a745,color:#fff,stroke:#28a745,stroke-width:2px;
+    classDef server fill:#007bff,color:#fff,stroke:#007bff,stroke-width:2px;
+    classDef pipeline fill:#6f42c1,color:#fff,stroke:#6f42c1,stroke-width:2px;
+    classDef external fill:#dc3545,color:#fff,stroke:#dc3545,stroke-width:2px;
+
     subgraph User
-        A[User Browser]
+        A[User Browser]:::user
     end
 
     subgraph FastAPI Server
-        B[Endpoint: /uploadfile/]
-        C[Endpoint: /ask/]
+        B[Endpoint: /uploadfile/]:::server
+        C[Endpoint: /ask/]:::server
     end
 
     subgraph RAG Pipeline
-        D[Load Document]
-        E[Chunk Text]
-        F[Create Embeddings & FAISS Store]
-        G[Retrieve Docs & Generate Answer]
+        D[Load Document]:::pipeline
+        E[Chunk Text]:::pipeline
+        F[Create Embeddings & FAISS Store]:::pipeline
+        G[Retrieve Docs & Generate Answer]:::pipeline
     end
 
     subgraph External Services
-        H[Google AI Platform]
+        H[Google AI Platform]:::external
     end
 
     A -- Uploads file --> B
@@ -50,12 +56,17 @@ This diagram illustrates the cyclical, self-correcting agent architecture using 
 
 ```mermaid
 graph TD
-    A[Start] --> B(Retrieve Documents);
-    B --> C{Grade Documents};
-    C -- Relevant --> D(Generate Answer);
-    C -- Not Relevant --> E(Rewrite Question);
+    %% Define styles
+    classDef startEnd fill:#28a745,color:#fff,stroke:#28a745,stroke-width:2px;
+    classDef process fill:#007bff,color:#fff,stroke:#007bff,stroke-width:2px;
+    classDef decision fill:#ffc107,color:#333,stroke:#ffc107,stroke-width:2px;
+
+    A[Start]:::startEnd --> B(Retrieve Documents):::process;
+    B --> C{Grade Documents}:::decision;
+    C -- Relevant --> D(Generate Answer):::process;
+    C -- Not Relevant --> E(Rewrite Question):::process;
     E --> B;
-    D --> F[End];
+    D --> F[End]:::startEnd;
 ```
 
 ## Phase 2.2 Architecture (Synthesis Agent with Web Search)
@@ -64,12 +75,18 @@ This diagram shows the final agent design, which can synthesize answers from bot
 
 ```mermaid
 graph TD
-    A[Start] --> B(Retrieve Document);
-    B --> C{Grade Document};
-    C -- Relevant --> D{Web Search Needed?};
-    C -- Not Relevant --> E(Rewrite Question);
+    %% Define styles
+    classDef startEnd fill:#28a745,color:#fff,stroke:#28a745,stroke-width:2px;
+    classDef process fill:#007bff,color:#fff,stroke:#007bff,stroke-width:2px;
+    classDef decision fill:#ffc107,color:#333,stroke:#ffc107,stroke-width:2px;
+    classDef web fill:#17a2b8,color:#fff,stroke:#17a2b8,stroke-width:2px;
+
+    A[Start]:::startEnd --> B(Retrieve Document):::process;
+    B --> C{Grade Document}:::decision;
+    C -- Relevant --> D{Web Search Needed?}:::decision;
+    C -- Not Relevant --> E(Rewrite Question):::process;
     E --> B;
-    D -- Yes --> G(Web Search);
-    D -- No --> F(Generate Answer);
+    D -- Yes --> G(Web Search):::web;
+    D -- No --> F(Generate Answer):::process;
     G -- Web Results --> F;
-    F --> H[End];
+    F --> H[End]:::startEnd;
