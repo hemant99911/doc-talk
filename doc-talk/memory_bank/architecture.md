@@ -69,24 +69,55 @@ graph TD
     D --> F[End]:::startEnd;
 ```
 
-## Phase 2.2 Architecture (Synthesis Agent with Web Search)
+## Phase 3 Architecture (Multi-Agent Orchestrator)
 
-This diagram shows the final agent design, which can synthesize answers from both local documents and a web search tool.
+This diagram shows the high-level architecture for a multi-agent system, where a central orchestrator delegates tasks to specialized agents.
 
 ```mermaid
 graph TD
     %% Define styles
-    classDef startEnd fill:#28a745,color:#fff,stroke:#28a745,stroke-width:2px;
-    classDef process fill:#007bff,color:#fff,stroke:#007bff,stroke-width:2px;
-    classDef decision fill:#ffc107,color:#333,stroke:#ffc107,stroke-width:2px;
-    classDef web fill:#17a2b8,color:#fff,stroke:#17a2b8,stroke-width:2px;
+    classDef user fill:#28a745,color:#fff,stroke:#28a745,stroke-width:2px;
+    classDef orchestrator fill:#6f42c1,color:#fff,stroke:#6f42c1,stroke-width:2px;
+    classDef agent fill:#007bff,color:#fff,stroke:#007bff,stroke-width:2px;
+    classDef answer fill:#20c997,color:#fff,stroke:#20c997,stroke-width:2px;
 
-    A[Start]:::startEnd --> B(Retrieve Document):::process;
-    B --> C{Grade Document}:::decision;
-    C -- Relevant --> D{Web Search Needed?}:::decision;
-    C -- Not Relevant --> E(Rewrite Question):::process;
-    E --> B;
-    D -- Yes --> G(Web Search):::web;
-    D -- No --> F(Generate Answer):::process;
-    G -- Web Results --> F;
-    F --> H[End]:::startEnd;
+    A[User Request]:::user --> B{Orchestrator Agent}:::orchestrator;
+    B --"Impact Analysis?"--> C[Code & PRD Agent]:::agent;
+    B --"Create Story?"--> D[Jira Agent]:::agent;
+    B --"Prod Issue?"--> E[Log & Ticket Agent]:::agent;
+    C --> F[Answer]:::answer;
+    D --> F;
+    E --> F;
+```
+
+## Phase 4 Architecture (Proactive, Event-Driven Agent)
+
+This diagram shows the final agent design, which is triggered by external events and can proactively assist the development team.
+
+```mermaid
+graph TD
+    %% Define styles
+    classDef event fill:#dc3545,color:#fff,stroke:#dc3545,stroke-width:2px;
+    classDef listener fill:#fd7e14,color:#fff,stroke:#fd7e14,stroke-width:2px;
+    classDef orchestrator fill:#6f42c1,color:#fff,stroke:#6f42c1,stroke-width:2px;
+    classDef agent fill:#007bff,color:#fff,stroke:#007bff,stroke-width:2px;
+
+    subgraph External_Systems
+        A[GitHub Event: New PR]:::event
+        B[Jira Event: New Ticket]:::event
+    end
+
+    subgraph Doc_Talk_System
+        C[Webhook Listener]:::listener
+        D{Orchestrator Agent}:::orchestrator
+        E[Code & PRD Agent]:::agent
+        F[Jira Agent]:::agent
+        G[Log & Ticket Agent]:::agent
+    end
+
+    A --> C
+    B --> C
+    C -- Triggers --> D
+    D --> E
+    D --> F
+    D --> G
